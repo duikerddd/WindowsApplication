@@ -4,7 +4,7 @@
 
 ; init
 {
-	SetControlDelay 0
+	SetControlDelay 20
 	; 读取配置
 	config_path := A_WorkingDir "\urls.json"
 	if !FileExist(config_path){
@@ -21,10 +21,9 @@
 	for key, value in json_data {
 	    keys.Push key
 	}
-	newst_keys := []
+	current_keys := []
 	AddChoice(MyGui, keys)
 	ctrl_j_flag := 1
-	esc_flag := 0
 	;监听键盘输入
 	OnMessage(0x101, HandlePress)
 }
@@ -47,8 +46,6 @@ HandlePress(wParam, lParam, msg, hwnd){
 		Return
 	}
 
-	Global esc_flag
-
 	txt := ControlGetText(MyGuiCtrlHwnd)
 	; 监控combo的回车键
     if wParam == 13 && txt != ""{
@@ -58,7 +55,6 @@ HandlePress(wParam, lParam, msg, hwnd){
     }
     ; 监控esc
     if wParam == 27 {
-    	Global esc_flag := 1
     	MyGui.hide
     	Return 
     } 
@@ -70,7 +66,6 @@ HandlePress(wParam, lParam, msg, hwnd){
     	} else {
     		ComboReset(keys, txt)
     	}
-  
     	; MsgBox txt
     	Return
     }
@@ -95,16 +90,16 @@ InputChange(GuiCtrlObj, txt) {
 
 	; 判断是否需要切换选项
 	change_flag := 0 
-	Global newst_keys
-	if newst_keys.Length != tamp_keys.Length{
+	Global current_keys
+	if current_keys.Length != tamp_keys.Length{
 		change_flag := 1
-		newst_keys := tamp_keys 
+		current_keys := tamp_keys 
 	}
-	if change_flag == 1 {
+	if change_flag == 0 {
 		Loop tamp_keys.Length{
-			if newst_keys[A_Index] != tamp_keys[A_Index]{
+			if current_keys[A_Index] != tamp_keys[A_Index]{
 				change_flag := 1
-				newst_keys := tamp_keys
+				current_keys := tamp_keys
 				break
 			}
 		}
@@ -129,5 +124,5 @@ ComboReset(items, txt){
 	}
 	
 	GuiCtrlObj.Text := txt
-	Send "{Ctrl Down}{Right}{Ctrl Up}"
+	ControlSend "{Ctrl Down}{Right}{Ctrl Up}", MyGuiCtrlHwnd
 }
