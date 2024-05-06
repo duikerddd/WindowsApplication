@@ -2,13 +2,15 @@
 #SingleInstance Force
 #Include <_JXON>
 
-; 需求
-; 一个窗口
-; combos {String, Account}
-; 选择弹出
-; 弹出都是按钮
+; 快捷键
+^+c::
+{
+	MainGui.show("W500 H500")
+	return
+}
 
-; init
+
+; 初始化
 {
 	SetControlDelay 20
 	; 读取配置
@@ -47,42 +49,6 @@
 	OnMessage(0x100, HandleEnterPress)
 }
 
-; 快捷键呼出
-^+c::
-{
-	MainGui.show("W500 H500")
-	return
-}
-
-changeButtons(buttonArr, flag) {
-	for b in buttonArr {
-	    if flag {
-			ControlShow b
-	    } else {
-	    	ControlHide b
-	    }
-	}
-}
-
-HandleEnterPress(wParam, lParam, msg, hwnd){
-	txt := GuiCtrlFromHwnd(ComboGuiCtrlHwnd).Text
-	; 监控combo的回车键
-    if wParam == 13 && txt != ""{
-    	if txt == StringKey {
-	    	changeButtons(StringButtons,true)
-	    	changeButtons(AccountButtons,false)
-    	}
-    	if txt == AccountKey {
-    		changeButtons(StringButtons,false)
-    		changeButtons(AccountButtons,true)
-    	}
-    }
-    ; 监控esc
-    if wParam == 27 {
-    	MainGui.hide
-    }
-}
-
 ShowChoice() {
 	ComboGuiCtrl := MainGui.Add("ComboBox", "", [StringKey, AccountKey])
 	ComboGuiCtrl.OnEvent("Change", InputChange)
@@ -97,13 +63,14 @@ AddButton() {
 		StringButtons.Push Btn
 	} 
 	for v in Accounts {
-		Btn := MainGui.Add("Button", "Default w80 ", v)
-		Btn.OnEvent("Click", ClickButton2)  
-		ControlHide Btn
-		AccountButtons.Push Btn
+		Btn2 := MainGui.Add("Button", "Default w80 ", v)
+		Btn2.OnEvent("Click", ClickButton2)  
+		ControlHide Btn2
+		AccountButtons.Push Btn2
 	} 
 }
 
+; 触发
 InputChange(GuiCtrlObj, Info) {  
 	; 返回值是选项索引
 	t := GuiCtrlObj.Text
@@ -117,6 +84,23 @@ InputChange(GuiCtrlObj, Info) {
     ControlHideDropDown ComboGuiCtrlHwnd
 }
 
+HandleEnterPress(wParam, lParam, msg, hwnd){
+	txt := GuiCtrlFromHwnd(ComboGuiCtrlHwnd).Text
+	; 监控combo的回车键
+    if wParam == 13 && txt != ""{
+    	if txt == StringKey {
+	    	openStringButtons
+    	}
+    	if txt == AccountKey {
+    		openAccountButtons
+    	}
+    }
+    ; 监控esc
+    if wParam == 27 {
+    	MainGui.hide
+    }
+}
+
 ClickButton(GuiCtrlObj, Info) {
 	A_Clipboard := json_data[StringKey][GuiCtrlObj.Text] 
 	MainGui.hide
@@ -127,4 +111,26 @@ ClickButton2(GuiCtrlObj, Info) {
 	Pwd := json_data[AccountKey][GuiCtrlObj.Text] 
 	ControlSend Account "Chrome_RenderWidgetHostHWND1"
 	MainGui.hide
+}
+
+
+;按钮操作
+openStringButtons(){
+	changeButtons(StringButtons,true)
+	changeButtons(AccountButtons,false)
+}
+
+openAccountButtons(){
+	changeButtons(StringButtons,false)
+    changeButtons(AccountButtons,true)
+}
+
+changeButtons(buttonArr, flag) {
+	for b in buttonArr {
+	    if flag {
+			ControlShow b
+	    } else {
+	    	ControlHide b
+	    }
+	}
 }

@@ -4,7 +4,7 @@
 
 ; init
 {
-	SetControlDelay 20
+	SetControlDelay 0
 	; 读取配置
 	config_path := A_WorkingDir "\urls.json"
 	if !FileExist(config_path){
@@ -16,51 +16,118 @@
 	json_data := Jxon_load(&config)
 	MyGuiCtrlHwnd := ""
 	MyGui := Gui()
-	MyGui.Opt("-Caption")
+	MyGui.Opt("-Caption +Border")
 	keys := []
 	for key, value in json_data {
 	    keys.Push key
 	}
-	;生成enter监控
-	OnMessage(0x100, HandleEnterPress)
+	newst_keys := []
+	AddChoice(MyGui, keys)
+	ctrl_j_flag := 1
+	esc_flag := 0
+	;监听键盘输入
+	OnMessage(0x101, HandlePress)
 }
 
-; 快捷键呼出
+; 快捷键呼出，优先级最高
 ^j::
 {
-	ShowChoice(MyGui, keys)
+	MyGui.show
 	return
 }
 
-HandleEnterPress(wParam, lParam, msg, hwnd){
-	txt := GuiCtrlFromHwnd(Hwnd).Text
+
+; 触发
+HandlePress(wParam, lParam, msg, hwnd){
+	guiCtrlObj := GuiCtrlFromHwnd(MyGuiCtrlHwnd)
+	; 快捷键第一次触发, 代表进程正式创建, 不做任何操作
+	Global ctrl_j_flag
+	if ctrl_j_flag == 1 {
+		ctrl_j_flag := 0
+		Return
+	}
+
+	Global esc_flag
+
+	txt := ControlGetText(MyGuiCtrlHwnd)
 	; 监控combo的回车键
     if wParam == 13 && txt != ""{
     	Run json_data[txt] 
     	MyGui.hide
+    	Return 
     }
     ; 监控esc
     if wParam == 27 {
+    	Global esc_flag := 1
     	MyGui.hide
+    	Return 
+    } 
+    key := Ord(Chr(wParam))
+    ; 字母,数字,刪除键,shift
+    if (key == 8 || key == 16 || (key >= 65 && key <= 90) || (key >= 97 && key <= 122) || (key >= 48 && key <= 57)) {
+    	if txt != "" {
+    		InputChange(guiCtrlObj, txt)
+    	} else {
+    		ComboReset(keys, txt)
+    	}
+  
+    	; MsgBox txt
+    	Return
     }
 }
 
-ShowChoice(MyGui, keys) {
+AddChoice(MyGui, keys){
 	MyGuiCtrl := MyGui.Add("ComboBox", "", keys)
-	MyGuiCtrl.OnEvent("Change", InputChange)
 	Global MyGuiCtrlHwnd := MyGuiCtrl.Hwnd
-	MyGui.show
 }
 
-InputChange(GuiCtrlObj, Info) {  
-	; 返回值是选项索引
-	t := GuiCtrlObj.Text
-	try {
-    	ret := ControlChooseString(GuiCtrlObj.Text,  "ComboBox1")
-    	ControlShowDropDown "ComboBox1"
-	}
-    Catch{
-    	ControlHideDropDown MyGuiCtrlHwnd
-    }
 
+InputChange(GuiCtrlObj, txt) {  
+	
+	; 匹配符合的选项
+	tamp_keys := []
+	Loop keys.Length{
+		button_txt := keys[A_Index]
+		if InStr(button_txt, txt){
+			tamp_keys.Push button_txt
+		}
+	}
+
+	; 判断是否需要切换选项
+	change_flag := 0 
+	Global newst_keys
+	if newst_keys.Length != tamp_keys.Length{
+		change_flag := 1
+		newst_keys := tamp_keys 
+	}
+	if change_flag == 1 {
+		Loop tamp_keys.Length{
+			if newst_keys[A_Index] != tamp_keys[A_Index]{
+				change_flag := 1
+				newst_keys := tamp_keys
+				break
+			}
+		}
+	}
+
+	; 重置选项
+	if change_flag == 1 {
+		ComboReset(tamp_keys, txt)
+	}
+
+}
+
+ComboReset(items, txt){
+	GuiCtrlObj := GuiCtrlFromHwnd(MyGuiCtrlHwnd)
+	GuiCtrlObj.Delete
+	GuiCtrlObj.Add items
+	if items.Length <= 0 && txt != "" {
+		ControlHideDropDown "ComboBox1"
+	}else {
+		ControlHideDropDown "ComboBox1"
+		ControlShowDropDown "ComboBox1"
+	}
+	
+	GuiCtrlObj.Text := txt
+	Send "{Ctrl Down}{Right}{Ctrl Up}"
 }
