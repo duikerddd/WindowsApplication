@@ -21,11 +21,19 @@
 	for key, value in json_data {
 	    keys.Push key
 	}
-	current_keys := []
+	current_keys := keys
 	AddChoice(MyGui, keys)
 	ctrl_j_flag := 1
 	;监听键盘输入
-	OnMessage(0x101, HandlePress)
+	;OnMessage(0x100, HandlePress)
+}
+
+Log(logMessage) {
+    logFile := A_WorkingDir "\log.txt"
+	if !FileExist(logFile){
+		FileAppend("`n", logFile)
+	}
+    FileAppend logMessage "`n", logFile
 }
 
 ; 快捷键呼出，优先级最高
@@ -49,36 +57,36 @@ HandlePress(wParam, lParam, msg, hwnd){
 	txt := ControlGetText(MyGuiCtrlHwnd)
 	; 监控combo的回车键
     if wParam == 13 && txt != ""{
-    	Run json_data[txt] 
+    	Run json_data[txt]
     	MyGui.hide
-    	Return 
+    	Return
     }
     ; 监控esc
     if wParam == 27 {
     	MyGui.hide
-    	Return 
-    } 
-    key := Ord(Chr(wParam))
-    ; 字母,数字,刪除键,shift
-    if (key == 8 || key == 16 || (key >= 65 && key <= 90) || (key >= 97 && key <= 122) || (key >= 48 && key <= 57)) {
-    	if txt != "" {
-    		InputChange(guiCtrlObj, txt)
-    	} else {
-    		ComboReset(keys, txt)
-    	}
-    	; MsgBox txt
     	Return
     }
 }
 
 AddChoice(MyGui, keys){
 	MyGuiCtrl := MyGui.Add("ComboBox", "", keys)
+	MyGuiCtrl.OnEvent("Change", CtrlChange)
 	Global MyGuiCtrlHwnd := MyGuiCtrl.Hwnd
 }
 
+CtrlChange(GuiCtrlObj, Info){
+	txt := ControlGetText(MyGuiCtrlHwnd)
+	Log("==")
+	Log(txt)
 
-InputChange(GuiCtrlObj, txt) {  
-	
+	if txt != ""
+		InputChange(GuiCtrlObj, txt)
+	else
+		ComboReset(keys, txt)
+}
+
+InputChange(GuiCtrlObj, txt) {
+
 	; 匹配符合的选项
 	tamp_keys := []
 	Loop keys.Length{
@@ -89,11 +97,11 @@ InputChange(GuiCtrlObj, txt) {
 	}
 
 	; 判断是否需要切换选项
-	change_flag := 0 
+	change_flag := 0
 	Global current_keys
 	if current_keys.Length != tamp_keys.Length{
 		change_flag := 1
-		current_keys := tamp_keys 
+		current_keys := tamp_keys
 	}
 	if change_flag == 0 {
 		Loop tamp_keys.Length{
@@ -118,11 +126,12 @@ ComboReset(items, txt){
 	GuiCtrlObj.Add items
 	if items.Length <= 0 && txt != "" {
 		ControlHideDropDown "ComboBox1"
+		ControlShowDropDown "ComboBox1"
 	}else {
 		ControlHideDropDown "ComboBox1"
 		ControlShowDropDown "ComboBox1"
 	}
-	
+
 	GuiCtrlObj.Text := txt
 	ControlSend "{Ctrl Down}{Right}{Ctrl Up}", MyGuiCtrlHwnd
 }
