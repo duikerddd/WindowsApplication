@@ -2,35 +2,58 @@
 #SingleInstance Force
 #Include <_JXON>
 
-; init
+
+; Ctrl+j 触发
+^j::
 {
+	SearchGui.show
+	return
+}
+
+; 初始化(只执行一次)
+{
+	; 安装键盘钩子
 	InstallKeybdHook
-	SetControlDelay 20
-	; 读取配置
-	config_path := A_WorkingDir "\urls.json"
-	if !FileExist(config_path){
-			MsgBox "create success!"
-			FileAppend("`n", config_path)
-	}
-	config := FileRead(config_path)
-	; map
-	json_data := Jxon_load(&config)
-	MyGuiCtrlHwnd := ""
-	MyGui := Gui()
-	MyGui.Opt("-Caption -Border")
-	keys := []
-	for key, value in json_data {
+	
+	; 读取文件
+	configPath := A_WorkingDir "\urls.json"
+	if !FileExist(configPath)
+		FileAppend("{}", configPath)
+	config := FileRead(configPath)
+
+	; 提取url数据
+	urlMap := Jxon_load(&config)
+	keys   := []
+	for key, value in urlMap {
 	    keys.Push key
 	}
 	current_keys := keys
-	AddChoice(MyGui, keys)
-	ctrl_j_flag := 1
+	
+	; 生成窗口
+	searchGuiCtrlHwnd := ""
+	searchGui := Gui("-Caption -Border", "searchGui")
+	urlInputGui := Gui("-Caption -Border", "urlInputGui")
+	InitGuiCtrl(searchGui, keys)
 
 	; change前监听
 	OnMessage(0x100, ChangeBefore)
 	; change后监听
 	OnMessage(0x101, ChangeAfter)
+}
 
+InitGuiCtrl(searchGui, keys){
+	; 搜索下拉框
+	searchGuiCtrl := searchGui.Add("ComboBox", "", keys)
+	searchGuiCtrl.OnEvent("Change", CtrlChange)
+	; 录入按钮
+	searchGui.Add("Button", "-Default").OnEvent("Click", ClickButton1)
+	Global searchGuiCtrlHwnd := searchGuiCtrl.Hwnd
+
+	; 录入框
+	urlInputGui.Add("Edit", "vInputKey", "")
+	urlInputGui.Add("Edit", "vInputVal", "")
+	; 确认
+	urlInputGui.Add("Button", "", "save").OnEvent("Click", SaveUrl)
 }
 
 Log(logMessage) {
@@ -41,26 +64,9 @@ Log(logMessage) {
     FileAppend "[" A_PriorKey "]" logMessage "`n", logFile
 }
 
-; 快捷键呼出，优先级最高
-^j::
-{
-	MyGui.show
-	return
-}
-
-
 ; 触发
 ChangeBefore(wParam, lParam, msg, hwnd){
-	guiCtrlObj := GuiCtrlFromHwnd(MyGuiCtrlHwnd)
-	; 快捷键第一次触发, 代表进程正式创建, 不做任何操作
-	Global ctrl_j_flag
-	if ctrl_j_flag == 1 {
-		ctrl_j_flag := 0
-		Return
-	}
-
-	txt := ControlGetText(MyGuiCtrlHwnd)
-
+	guiCtrlObj := GuiCtrlFromHwnd(searchGuiCtrlHwnd)
     ; 监控esc
     if wParam == 27 {
     	WinClose
@@ -68,37 +74,42 @@ ChangeBefore(wParam, lParam, msg, hwnd){
 }
 
 ChangeAfter(wParam, lParam, msg, hwnd){
-	guiCtrlObj := GuiCtrlFromHwnd(MyGuiCtrlHwnd)
-	; 快捷键第一次触发, 代表进程正式创建, 不做任何操作
-	Global ctrl_j_flag
-	if ctrl_j_flag == 1 {
-		ctrl_j_flag := 0
-		Return
-	}
+	guiCtrlObj := GuiCtrlFromHwnd(searchGuiCtrlHwnd)
 
-	txt := ControlGetText(MyGuiCtrlHwnd)
+	txt := ControlGetText(searchGuiCtrlHwnd)
 	; 监控combo的回车键
     if wParam == 13 && txt != ""{
-    	Run json_data[ControlGetItems(MyGuiCtrlHwnd)[1]]
+    	Run urlMap[ControlGetItems(searchGuiCtrlHwnd)[1]]
     	WinClose
     	Return
     }
 }
 
 
-AddChoice(MyGui, keys){
-	MyGuiCtrl := MyGui.Add("ComboBox", "", keys)
-	MyGuiCtrl.OnEvent("Change", CtrlChange)
-	Global MyGuiCtrlHwnd := MyGuiCtrl.Hwnd
-}
-
 CtrlChange(GuiCtrlObj, Info){
-	txt := ControlGetText(MyGuiCtrlHwnd)
+	txt := ControlGetText(searchGuiCtrlHwnd)
 
 	if txt != ""
 		InputChange(GuiCtrlObj, txt)
 	else
 		ComboReset(keys, txt)
+}
+
+ClickButton1(GuiCtrlObj, Info){
+	urlInputGui.show()
+}
+
+SaveUrl(GuiCtrlObj, Info){
+	Global urlMap
+	key := ControlGetText("Edit1")
+	urlMap[ControlGetText("Edit1")] :=  ControlGetText("Edit2")
+	jsonString := Jxon_dump(urlMap)
+	Global keys    
+	keys.push key
+	FileDelete(configPath)
+	FileAppend(jsonString, configPath)
+	MsgBox "save success"
+	WinClose
 }
 
 InputChange(GuiCtrlObj, txt) {
@@ -136,10 +147,12 @@ InputChange(GuiCtrlObj, txt) {
 }
 
 ComboReset(items, txt){
-	GuiCtrlObj := GuiCtrlFromHwnd(MyGuiCtrlHwnd)
+	GuiCtrlObj := GuiCtrlFromHwnd(searchGuiCtrlHwnd)
 	GuiCtrlObj.Delete
 	GuiCtrlObj.Add items
 	ControlHideDropDown "ComboBox1"
 	ControlShowDropDown "ComboBox1"
-	ControlSend txt, MyGuiCtrlHwnd
+	ControlSend txt, searchGuiCtrlHwnd
 }
+
+
