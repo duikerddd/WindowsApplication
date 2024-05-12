@@ -2,19 +2,54 @@
 #SingleInstance Force
 #Include <_JXON>
 
+; 日志
+InstallKeybdHook
+Log(logMessage) {
+    logFile := A_WorkingDir "\log.txt"
+	
+	if !FileExist(logFile)
+		FileAppend("`n", logFile)
+	
+    FileAppend "[" A_PriorKey "]" logMessage "`n", logFile
+}
+
+; 窗口栈
+stackWidght := []
+ShowGui(GuiObj){
+	; 隐藏上个窗口
+	if stackWidght.Length > 0 
+		stackWidght[-1].Hide()
+
+	; 打开新窗口并记录
+	GuiObj.show
+	stackWidght.push(GuiObj)
+}
+CloseGui(){
+	guiObj := stackWidght.pop()
+
+	; 两个窗口做窗口回退
+	if stackWidght.Length > 1 {
+		; 隐藏当前窗口
+		guiObj.Hide()
+		; 展示上个窗口
+		stackWidght[-1].Show()
+		Return 
+	}	
+	
+	; 一个窗口做关闭
+	WinClose
+}
+
 
 ; Ctrl+j 触发
 ^j::
 {
-	SearchGui.show
+	ShowGui(SearchGui)
 	return
 }
 
 ; 初始化(只执行一次)
-{
-	; 安装键盘钩子
-	InstallKeybdHook
-	
+{	
 	; 读取文件
 	configPath := A_WorkingDir "\urls.json"
 	if !FileExist(configPath)
@@ -23,10 +58,11 @@
 
 	; 提取url数据
 	urlMap := Jxon_load(&config)
+
 	keys   := []
-	for key, value in urlMap {
+	for key, value in urlMap 
 	    keys.Push key
-	}
+	
 	current_keys := keys
 	
 	; 生成窗口
@@ -43,10 +79,12 @@
 
 InitGuiCtrl(searchGui, keys){
 	; 搜索下拉框
-	searchGuiCtrl := searchGui.Add("ComboBox", "", keys)
+	searchGui.SetFont("s17 Norm", "Myanmar Text")
+	searchGuiCtrl := searchGui.Add("ComboBox", "x8 y16 w400", keys)
 	searchGuiCtrl.OnEvent("Change", CtrlChange)
 	; 录入按钮
-	searchGui.Add("Button", "-Default").OnEvent("Click", ClickButton1)
+	searchGui.SetFont("s20", "Ms Shell Dlg 2")
+	searchGui.Add("Button", "x416 y16 w68 h48 -Theme", "+").OnEvent("Click", ClickAddUrl)
 	Global searchGuiCtrlHwnd := searchGuiCtrl.Hwnd
 
 	; 录入框
@@ -56,47 +94,59 @@ InitGuiCtrl(searchGui, keys){
 	urlInputGui.Add("Button", "", "save").OnEvent("Click", SaveUrl)
 }
 
-Log(logMessage) {
-    logFile := A_WorkingDir "\log.txt"
-	if !FileExist(logFile){
-		FileAppend("`n", logFile)
-	}
-    FileAppend "[" A_PriorKey "]" logMessage "`n", logFile
-}
-
 ; 触发
 ChangeBefore(wParam, lParam, msg, hwnd){
-	guiCtrlObj := GuiCtrlFromHwnd(searchGuiCtrlHwnd)
-    ; 监控esc
-    if wParam == 27 {
-    	WinClose
+	 if wParam == 27 {
+    	SetTimer SearchInput, 0
+    	CloseGui()
     }
 }
 
 ChangeAfter(wParam, lParam, msg, hwnd){
-	guiCtrlObj := GuiCtrlFromHwnd(searchGuiCtrlHwnd)
+
+	searchGuiCtrl := GuiCtrlFromHwnd(searchGuiCtrlHwnd)
+
+	; 上下键 or esc 不触发搜索，需要中断valChange定时器
+	if wParam == 38 || wParam == 40 
+		SetTimer SearchInput, 0
+
+	; 监控esc
+    if wParam == 27 {
+    	SetTimer SearchInput, 0
+    	CloseGui()
+    }		
 
 	txt := ControlGetText(searchGuiCtrlHwnd)
 	; 监控combo的回车键
-    if wParam == 13 && txt != ""{
-    	Run urlMap[ControlGetItems(searchGuiCtrlHwnd)[1]]
-    	WinClose
+    if wParam == 13 && txt != "" && WinActive("searchGui"){
+    	try
+    		Run urlMap[ControlGetItems(searchGuiCtrlHwnd)[1]]
+    	catch 
+    		Return 
+    	CloseGui()
     	Return
     }
 }
 
-
+; 延迟400秒触发
 CtrlChange(GuiCtrlObj, Info){
+	if WinActive("searchGui")
+		SetTimer SearchInput, -300 
+}
+
+SearchInput(){
 	txt := ControlGetText(searchGuiCtrlHwnd)
+	GuiCtrlObj := GuiCtrlFromHwnd(searchGuiCtrlHwnd)
 
 	if txt != ""
 		InputChange(GuiCtrlObj, txt)
-	else
-		ComboReset(keys, txt)
+	else {
+		ComboSetChooice(keys, txt)
+	}
 }
 
-ClickButton1(GuiCtrlObj, Info){
-	urlInputGui.show()
+ClickAddUrl(GuiCtrlObj, Info){
+	ShowGui(urlInputGui)
 }
 
 SaveUrl(GuiCtrlObj, Info){
@@ -141,18 +191,18 @@ InputChange(GuiCtrlObj, txt) {
 	; 重置选项
 	if change_flag == 1 {
 		current_keys := tamp_keys
-		ComboReset(tamp_keys, txt)
+		ComboSetChooice(tamp_keys, txt)
 	}
 
 }
 
-ComboReset(items, txt){
-	GuiCtrlObj := GuiCtrlFromHwnd(searchGuiCtrlHwnd)
-	GuiCtrlObj.Delete
-	GuiCtrlObj.Add items
-	ControlHideDropDown "ComboBox1"
-	ControlShowDropDown "ComboBox1"
-	ControlSend txt, searchGuiCtrlHwnd
+ComboSetChooice(items, txt){
+	searchGuiCtrl := GuiCtrlFromHwnd(searchGuiCtrlHwnd)
+	searchGuiCtrl.Delete
+	searchGuiCtrl.Add items
+	ControlHideDropDown searchGuiCtrl
+	ControlShowDropDown searchGuiCtrl
+	SendInput  txt
 }
 
 
