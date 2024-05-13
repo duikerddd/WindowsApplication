@@ -25,10 +25,10 @@ ShowGui(GuiObj){
 	stackWidght.push(GuiObj)
 }
 CloseGui(){
+	guiCount := stackWidght.Length
 	guiObj := stackWidght.pop()
-
 	; 两个窗口做窗口回退
-	if stackWidght.Length > 1 {
+	if guiCount > 1 {
 		; 隐藏当前窗口
 		guiObj.Hide()
 		; 展示上个窗口
@@ -83,19 +83,23 @@ InitGuiCtrl(searchGui, keys){
 	searchGuiCtrl := searchGui.Add("ComboBox", "x8 y16 w400", keys)
 	searchGuiCtrl.OnEvent("Change", CtrlChange)
 	; 录入按钮
-	searchGui.SetFont("s20", "Ms Shell Dlg 2")
-	searchGui.Add("Button", "x416 y16 w68 h48 -Theme", "+").OnEvent("Click", ClickAddUrl)
+	searchGui.SetFont("s30", "Ms Shell Dlg 2")
+	searchGui.Add("Button", "x416 y16 w68 h48 -Border", "+").OnEvent("Click", ClickAddUrl)
 	Global searchGuiCtrlHwnd := searchGuiCtrl.Hwnd
 
 	; 录入框
-	urlInputGui.Add("Edit", "vInputKey", "")
-	urlInputGui.Add("Edit", "vInputVal", "")
+	urlInputGui.SetFont("s16", "Segoe UI")
+	urlInputGui.Add("Text", "x80 y96 w108 h43 +0x200 +Center", "Name")
+	urlInputGui.Add("Edit", "vInputKey x192 y96 w372 h44", "")
+	urlInputGui.Add("Text", "x80 y160 w108 h43 +0x200 +Center", "URL")
+	urlInputGui.Add("Edit", "vInputVal x192 y160 w372 h44", "")
 	; 确认
 	urlInputGui.Add("Button", "", "save").OnEvent("Click", SaveUrl)
 }
 
 ; 触发
 ChangeBefore(wParam, lParam, msg, hwnd){
+	 ; 监控esc
 	 if wParam == 27 {
     	SetTimer SearchInput, 0
     	CloseGui()
@@ -108,13 +112,7 @@ ChangeAfter(wParam, lParam, msg, hwnd){
 
 	; 上下键 or esc 不触发搜索，需要中断valChange定时器
 	if wParam == 38 || wParam == 40 
-		SetTimer SearchInput, 0
-
-	; 监控esc
-    if wParam == 27 {
-    	SetTimer SearchInput, 0
-    	CloseGui()
-    }		
+		SetTimer SearchInput, 0		
 
 	txt := ControlGetText(searchGuiCtrlHwnd)
 	; 监控combo的回车键
