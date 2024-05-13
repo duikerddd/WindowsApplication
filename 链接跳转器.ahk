@@ -82,19 +82,20 @@ CloseGui(){
 InitGuiCtrl(searchGui, keys){
 	; 搜索下拉框
 	searchGui.SetFont("s17 Norm", "Myanmar Text")
-	searchGuiCtrl := searchGui.Add("ComboBox", "x8 y16 w400", keys)
+	searchGuiCtrl := searchGui.Add("ComboBox", "x10 y16 w400", keys)
 	searchGuiCtrl.OnEvent("Change", CtrlChange)
 	; 录入按钮
 	searchGui.SetFont("s30", "Ms Shell Dlg 2")
-	searchGui.Add("Text", "x416 y16 w68 h48 -Border c93ADE2", "+").OnEvent("Click", ClickAddUrl)
+	inputGuiCtrl := searchGui.Add("Text", "x420 y16 w40 h48 -Border c93ADE2", "+")
+	inputGuiCtrl.OnEvent("Click", ClickAddUrl)
 	Global searchGuiCtrlHwnd := searchGuiCtrl.Hwnd
 
 	; 录入框
 	urlInputGui.SetFont("s16", "Segoe UI")
-	urlInputGui.Add("Text", "x80 y96 w108 h43 +0x200 +Center", "Name")
-	urlInputGui.Add("Edit", "vInputKey x192 y96 w372 h44", "")
-	urlInputGui.Add("Text", "x80 y160 w108 h43 +0x200 +Center", "URL")
-	urlInputGui.Add("Edit", "vInputVal x192 y160 w372 h44", "")
+	urlInputGui.Add("Text", "x0 y40 w108 h43 +0x200 +Center", "Name")
+	urlInputGui.Add("Edit", "vInputKey x102 y40 w372 h44", "")
+	urlInputGui.Add("Text", "x0 y100 w88 h43 +0x200 +Center", "URL")
+	urlInputGui.Add("Edit", "vInputVal x102 y100 w372 h44", "")
 	; 确认
 	urlInputGui.Add("Button", "", "save").OnEvent("Click", SaveUrl)
 }
