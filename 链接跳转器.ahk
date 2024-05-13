@@ -45,6 +45,8 @@ CloseGui(){
 ^j::
 {
 	ShowGui(SearchGui)
+	; 透明
+	;WinSetTransparent 200, "searchGui"
 	return
 }
 
@@ -68,7 +70,7 @@ CloseGui(){
 	; 生成窗口
 	searchGuiCtrlHwnd := ""
 	searchGui := Gui("-Caption -Border", "searchGui")
-	urlInputGui := Gui("-Caption -Border", "urlInputGui")
+	urlInputGui := Gui("-Caption", "urlInputGui")
 	InitGuiCtrl(searchGui, keys)
 
 	; change前监听
@@ -84,7 +86,7 @@ InitGuiCtrl(searchGui, keys){
 	searchGuiCtrl.OnEvent("Change", CtrlChange)
 	; 录入按钮
 	searchGui.SetFont("s30", "Ms Shell Dlg 2")
-	searchGui.Add("Button", "x416 y16 w68 h48 -Border", "+").OnEvent("Click", ClickAddUrl)
+	searchGui.Add("Text", "x416 y16 w68 h48 -Border c93ADE2", "+").OnEvent("Click", ClickAddUrl)
 	Global searchGuiCtrlHwnd := searchGuiCtrl.Hwnd
 
 	; 录入框
@@ -139,7 +141,8 @@ SearchInput(){
 	if txt != ""
 		InputChange(GuiCtrlObj, txt)
 	else {
-		ComboSetChooice(keys, txt)
+		if current_keys.Length < keys.Length
+			ComboSetChooice(keys, txt)
 	}
 }
 
@@ -156,8 +159,10 @@ SaveUrl(GuiCtrlObj, Info){
 	keys.push key
 	FileDelete(configPath)
 	FileAppend(jsonString, configPath)
+	ControlsetText "", "Edit1"
+	ControlsetText "", "Edit2"
 	MsgBox "save success"
-	WinClose
+	CloseGui()
 }
 
 InputChange(GuiCtrlObj, txt) {
@@ -166,7 +171,7 @@ InputChange(GuiCtrlObj, txt) {
 	tamp_keys := []
 	Loop keys.Length{
 		button_txt := keys[A_Index]
-		if InStr(button_txt, txt){
+		if InStr(button_txt, txt) > 0 {
 			tamp_keys.Push button_txt
 		}
 	}
