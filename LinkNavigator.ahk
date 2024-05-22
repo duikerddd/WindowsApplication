@@ -4,9 +4,9 @@
 #Include <_JXON>
 #Include <Log>
 
+class LinkNavigator {
 
-class LinkNavigator extends Object {
-
+	; 成员变量
 	keys   := []
 	searchGuiCtrlHwnd := ""
 	configPath := A_WorkingDir "\urls.json"
@@ -14,16 +14,17 @@ class LinkNavigator extends Object {
 	searchGui := ""
 	urlInputGui := ""
 	urlMap := ""
+	timer_func_obj := ObjBindMethod(this,"SearchInput")
 
-	Init(){
-		this.InitComboData()
+	__New(){
+		this.InitComboData
 
-		this.InitGui()
+		this.InitGui
 
 		; change前监听
-		OnMessage(0x100, this.ChangeBefore)
+		OnMessage(0x100, ObjBindMethod(this,"ChangeBefore"))
 		; change后监听
-		OnMessage(0x101, this.ChangeAfter)
+		OnMessage(0x101, ObjBindMethod(this,"ChangeAfter"))
 	}
 
 
@@ -33,36 +34,36 @@ class LinkNavigator extends Object {
 			FileAppend("{}", this.configPath)
 		config := FileRead(this.configPath)
 		; 提取url数据
-		urlMap := Jxon_load(&config)
+		this.urlMap := Jxon_load(&config)
 
-		for key, value in urlMap 
+		for key, value in this.urlMap 
 		    this.keys.Push key
 
 		this.current_keys := this.keys
 	}
 
 	InitGui(){
-		searchGui := Gui("-Caption -Border", "searchGui")
-		urlInputGui := Gui("-Caption", "urlInputGui")
+		this.searchGui := Gui("-Caption -Border", "searchGui")
+		this.urlInputGui := Gui("-Caption", "urlInputGui")
 
 		; 搜索下拉框
-		searchGui.SetFont("s17 Norm", "Myanmar Text")
-		searchGuiCtrl := searchGui.Add("ComboBox", "x10 y16 w400", this.keys)
-		searchGuiCtrl.OnEvent("Change", this.CtrlChange)
+		this.searchGui.SetFont("s17 Norm", "Myanmar Text")
+		this.searchGuiCtrl := this.searchGui.Add("ComboBox", "x10 y16 w400", this.keys)
+		this.searchGuiCtrl.OnEvent("Change", ObjBindMethod(this, "CtrlChange"))
 		; 录入按钮
-		searchGui.SetFont("s30", "Ms Shell Dlg 2")
-		inputGuiCtrl := searchGui.Add("Text", "x420 y16 w40 h48 -Border c93ADE2", "+")
-		inputGuiCtrl.OnEvent("Click", this.ClickAddUrl)
-		searchGuiCtrlHwnd := searchGuiCtrl.Hwnd
+		this.searchGui.SetFont("s30", "Ms Shell Dlg 2")
+		this.inputGuiCtrl := this.searchGui.Add("Text", "x420 y16 w40 h48 -Border c93ADE2", "+")
+		this.inputGuiCtrl.OnEvent("Click", ObjBindMethod(this,"ClickAddUrl"))
+		this.searchGuiCtrlHwnd := this.searchGuiCtrl.Hwnd
 
 		; 录入框
-		urlInputGui.SetFont("s16", "Segoe UI")
-		urlInputGui.Add("Text", "x0 y40 w108 h43 +0x200 +Center", "Name")
-		urlInputGui.Add("Edit", "vInputKey x102 y40 w372 h44", "")
-		urlInputGui.Add("Text", "x0 y100 w88 h43 +0x200 +Center", "URL")
-		urlInputGui.Add("Edit", "vInputVal x102 y100 w372 h44", "")
+		this.urlInputGui.SetFont("s16", "Segoe UI")
+		this.urlInputGui.Add("Text", "x0 y40 w108 h43 +0x200 +Center", "Name")
+		this.urlInputGui.Add("Edit", "vInputKey x102 y40 w372 h44", "")
+		this.urlInputGui.Add("Text", "x0 y100 w88 h43 +0x200 +Center", "URL")
+		this.urlInputGui.Add("Edit", "vInputVal x102 y100 w372 h44", "")
 		; 确认
-		urlInputGui.Add("Button", "", "save").OnEvent("Click", this.SaveUrl)
+		this.urlInputGui.Add("Button", "", "save").OnEvent("Click", ObjBindMethod(this, "SaveUrl"))
 	}
 
 
@@ -71,18 +72,17 @@ class LinkNavigator extends Object {
 	ChangeBefore(wParam, lParam, msg, hwnd){
 		 ; 监控esc
 		 if wParam == 27 {
-	    	SetTimer this.SearchInput, 0
+	    	SetTimer this.timer_func_obj, 0
 	    	StackWidght.CloseGui()
 	    }
 	}
 
 	ChangeAfter(wParam, lParam, msg, hwnd){
-
 		searchGuiCtrl := GuiCtrlFromHwnd(this.searchGuiCtrlHwnd)
 
 		; 上下键 or esc 不触发搜索，需要中断valChange定时器
 		if wParam == 38 || wParam == 40 
-			SetTimer this.SearchInput, 0		
+			SetTimer this.timer_func_obj, 0		
 
 		txt := ControlGetText(this.searchGuiCtrlHwnd)
 		; 监控combo的回车键
@@ -99,7 +99,7 @@ class LinkNavigator extends Object {
 	; 延迟400秒触发
 	CtrlChange(GuiCtrlObj, Info){
 		if WinActive("searchGui")
-			SetTimer this.SearchInput, -300 
+			SetTimer this.timer_func_obj, -300 
 	}
 
 	SearchInput(){
@@ -173,17 +173,15 @@ class LinkNavigator extends Object {
 		SendInput  txt
 	}
 
-
-	
 }
 
 ; 初始化
-LinkNavigator().Init()
+linkNavigatorObj := LinkNavigator()
 
 ; 注册快捷键 Ctrl+j 
 ^j::
 {
-	StackWidght.ShowGui(linkNavigator.searchGui)
+	StackWidght.ShowGui(linkNavigatorObj.searchGui)
 	; 透明
 	;WinSetTransparent 200, "searchGui"
 	return
