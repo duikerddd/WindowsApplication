@@ -7,28 +7,28 @@
 class LinkNavigator {
 
 	; 成员变量
-	keys   := []
+	keys := []
 	searchGuiCtrlHwnd := ""
 	configPath := A_WorkingDir "\urls.json"
 	current_keys := []
 	searchGui := ""
 	urlInputGui := ""
 	urlMap := ""
-	timer_func_obj := ObjBindMethod(this,"SearchInput")
+	timer_func_obj := ObjBindMethod(this, "SearchInput")
 
-	__New(){
+	__New() {
 		this.InitComboData
 
 		this.InitGui
 
 		; change前监听
-		OnMessage(0x100, ObjBindMethod(this,"ChangeBefore"))
+		OnMessage(0x100, ObjBindMethod(this, "ChangeBefore"))
 		; change后监听
-		OnMessage(0x101, ObjBindMethod(this,"ChangeAfter"))
+		OnMessage(0x101, ObjBindMethod(this, "ChangeAfter"))
 	}
 
 
-	InitComboData(){
+	InitComboData() {
 		; 读取文件
 		if !FileExist(this.configPath)
 			FileAppend("{}", this.configPath)
@@ -36,24 +36,23 @@ class LinkNavigator {
 		; 提取url数据
 		this.urlMap := Jxon_load(&config)
 
-		for key, value in this.urlMap 
-		    this.keys.Push key
-
+		for key, value in this.urlMap
+			this.keys.Push key
 		this.current_keys := this.keys
 	}
 
-	InitGui(){
+	InitGui() {
 		this.searchGui := Gui("-Caption -Border", "searchGui")
 		this.urlInputGui := Gui("-Caption", "urlInputGui")
 
 		; 搜索下拉框
 		this.searchGui.SetFont("s17 Norm", "Myanmar Text")
-		this.searchGuiCtrl := this.searchGui.Add("ComboBox", "x10 y16 w400", this.keys)
+		this.searchGuiCtrl := this.searchGui.Add("ComboBox", "+Redraw R3 x10 y16 w400", this.keys)
 		this.searchGuiCtrl.OnEvent("Change", ObjBindMethod(this, "CtrlChange"))
 		; 录入按钮
 		this.searchGui.SetFont("s30", "Ms Shell Dlg 2")
 		this.inputGuiCtrl := this.searchGui.Add("Text", "x420 y16 w40 h48 -Border c93ADE2", "+")
-		this.inputGuiCtrl.OnEvent("Click", ObjBindMethod(this,"ClickAddUrl"))
+		this.inputGuiCtrl.OnEvent("Click", ObjBindMethod(this, "ClickAddUrl"))
 		this.searchGuiCtrlHwnd := this.searchGuiCtrl.Hwnd
 
 		; 录入框
@@ -67,42 +66,41 @@ class LinkNavigator {
 	}
 
 
-
 	; 触发
-	ChangeBefore(wParam, lParam, msg, hwnd){
-		 ; 监控esc
-		 if wParam == 27 {
-	    	SetTimer this.timer_func_obj, 0
-	    	StackWidght.CloseGui()
-	    }
+	ChangeBefore(wParam, lParam, msg, hwnd) {
+		; 监控esc
+		if wParam == 27 {
+			SetTimer this.timer_func_obj, 0
+			StackWidght.CloseGui()
+		}
 	}
 
-	ChangeAfter(wParam, lParam, msg, hwnd){
+	ChangeAfter(wParam, lParam, msg, hwnd) {
 		searchGuiCtrl := GuiCtrlFromHwnd(this.searchGuiCtrlHwnd)
 
 		; 上下键 or esc 不触发搜索，需要中断valChange定时器
-		if wParam == 38 || wParam == 40 
-			SetTimer this.timer_func_obj, 0		
+		if wParam == 38 || wParam == 40
+			SetTimer this.timer_func_obj, 0
 
 		txt := ControlGetText(this.searchGuiCtrlHwnd)
 		; 监控combo的回车键
-	    if wParam == 13 && txt != "" && WinActive("searchGui"){
-	    	try
-	    		Run this.urlMap[ControlGetItems(this.searchGuiCtrlHwnd)[1]]
-	    	catch 
-	    		Return 
-	    	StackWidght.CloseGui()
-	    	Return
-	    }
+		if wParam == 13 && txt != "" && WinActive("searchGui") {
+			try
+				Run this.urlMap[ControlGetItems(this.searchGuiCtrlHwnd)[1]]
+			catch
+				Return
+			StackWidght.CloseGui()
+			Return
+		}
 	}
 
 	; 延迟400秒触发
-	CtrlChange(GuiCtrlObj, Info){
+	CtrlChange(GuiCtrlObj, Info) {
 		if WinActive("searchGui")
-			SetTimer this.timer_func_obj, -300 
+			SetTimer this.timer_func_obj, -300
 	}
 
-	SearchInput(){
+	SearchInput() {
 		txt := ControlGetText(this.searchGuiCtrlHwnd)
 		GuiCtrlObj := GuiCtrlFromHwnd(this.searchGuiCtrlHwnd)
 
@@ -114,13 +112,13 @@ class LinkNavigator {
 		}
 	}
 
-	ClickAddUrl(GuiCtrlObj, Info){
+	ClickAddUrl(GuiCtrlObj, Info) {
 		StackWidght.ShowGui(this.urlInputGui)
 	}
 
-	SaveUrl(GuiCtrlObj, Info){
+	SaveUrl(GuiCtrlObj, Info) {
 		key := ControlGetText("Edit1")
-		this.urlMap[ControlGetText("Edit1")] :=  ControlGetText("Edit2")
+		this.urlMap[ControlGetText("Edit1")] := ControlGetText("Edit2")
 		jsonString := Jxon_dump(this.urlMap)
 		this.keys.push key
 		FileDelete(this.configPath)
@@ -135,7 +133,7 @@ class LinkNavigator {
 
 		; 匹配符合的选项
 		tamp_keys := []
-		Loop this.keys.Length{
+		Loop this.keys.Length {
 			button_txt := this.keys[A_Index]
 			if InStr(button_txt, txt) > 0 {
 				tamp_keys.Push button_txt
@@ -144,12 +142,12 @@ class LinkNavigator {
 
 		; 判断是否需要切换选项
 		change_flag := 0
-		if this.current_keys.Length != tamp_keys.Length{
+		if this.current_keys.Length != tamp_keys.Length {
 			change_flag := 1
 		}
 		if change_flag == 0 {
-			Loop tamp_keys.Length{
-				if this.current_keys[A_Index] != tamp_keys[A_Index]{
+			Loop tamp_keys.Length {
+				if this.current_keys[A_Index] != tamp_keys[A_Index] {
 					change_flag := 1
 					break
 				}
@@ -164,13 +162,13 @@ class LinkNavigator {
 
 	}
 
-	ComboSetChooice(items, txt){
+	ComboSetChooice(items, txt) {
 		searchGuiCtrl := GuiCtrlFromHwnd(this.searchGuiCtrlHwnd)
 		searchGuiCtrl.Delete
 		searchGuiCtrl.Add items
 		ControlHideDropDown searchGuiCtrl
 		ControlShowDropDown searchGuiCtrl
-		SendInput  txt
+		SendInput txt
 	}
 
 }
@@ -178,7 +176,7 @@ class LinkNavigator {
 ; 初始化
 linkNavigatorObj := LinkNavigator()
 
-; 注册快捷键 Ctrl+j 
+; 注册快捷键 Ctrl+j
 ^j::
 {
 	StackWidght.ShowGui(linkNavigatorObj.searchGui)
@@ -186,11 +184,3 @@ linkNavigatorObj := LinkNavigator()
 	;WinSetTransparent 200, "searchGui"
 	return
 }
-
-
-
-
-
-
-
-
