@@ -3,7 +3,7 @@
 #Include <StackWidget>
 #Include <_JXON>
 #Include <Log>
-Persistent
+; Persistent
 
 class LinkNavigator {
 
@@ -11,7 +11,6 @@ class LinkNavigator {
 	keys := []
 	searchGuiCtrlHwnd := ""
 	configPath := A_WorkingDir "\urls.json"
-	current_keys := []
 	searchGui := ""
 	urlInputGui := ""
 	urlMap := ""
@@ -39,7 +38,6 @@ class LinkNavigator {
 
 		for key, value in this.urlMap
 			this.keys.Push key
-		this.current_keys := this.keys
 	}
 
 	InitGui() {
@@ -78,11 +76,9 @@ class LinkNavigator {
 
 	ChangeAfter(wParam, lParam, msg, hwnd) {
 		searchGuiCtrl := GuiCtrlFromHwnd(this.searchGuiCtrlHwnd)
-
 		; 上下键 or esc 不触发搜索，需要中断valChange定时器
 		if wParam == 38 || wParam == 40
 			SetTimer this.timer_func_obj, 0
-
 		txt := ControlGetText(this.searchGuiCtrlHwnd)
 		; 监控combo的回车键
 		if wParam == 13 && txt != "" && WinActive("searchGui") {
@@ -97,8 +93,9 @@ class LinkNavigator {
 
 	; 延迟400秒触发
 	CtrlChange(GuiCtrlObj, Info) {
-		if WinActive("searchGui")
+		if WinActive("searchGui") {
 			SetTimer this.timer_func_obj, -300
+		}
 	}
 
 	SearchInput() {
@@ -108,7 +105,7 @@ class LinkNavigator {
 		if txt != ""
 			this.InputChange(GuiCtrlObj, txt)
 		else {
-			if this.current_keys.Length < this.keys.Length
+			if ControlGetItems(this.searchGuiCtrlHwnd).Length < this.keys.Length
 				this.ComboSetChooice(this.keys, txt)
 		}
 	}
@@ -143,12 +140,14 @@ class LinkNavigator {
 
 		; 判断是否需要切换选项
 		change_flag := 0
-		if this.current_keys.Length != tamp_keys.Length {
+		current_keys := ControlGetItems(this.searchGuiCtrlHwnd)
+		if current_keys.Length != tamp_keys.Length {
 			change_flag := 1
 		}
+		
 		if change_flag == 0 {
 			Loop tamp_keys.Length {
-				if this.current_keys[A_Index] != tamp_keys[A_Index] {
+				if current_keys[A_Index] != tamp_keys[A_Index] {
 					change_flag := 1
 					break
 				}
@@ -157,7 +156,6 @@ class LinkNavigator {
 
 		; 重置选项
 		if change_flag == 1 {
-			this.current_keys := tamp_keys
 			this.ComboSetChooice(tamp_keys, txt)
 		}
 
@@ -169,7 +167,8 @@ class LinkNavigator {
 		searchGuiCtrl.Add items
 		ControlHideDropDown searchGuiCtrl
 		ControlShowDropDown searchGuiCtrl
-		SendInput txt
+		searchGuiCtrl.Text := txt
+		SendInput "{End}"
 	}
 
 }
