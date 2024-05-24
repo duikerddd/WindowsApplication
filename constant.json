@@ -1,0 +1,24 @@
+{
+    "String":
+    {
+        "user_id": "c947e762-f298-41f8-9922-20aa7503c0e9",
+        "company_id": "fd5b7827-a803-4622-b190-50760916b4c2",
+        "vpn": "HfqM+5379*"
+    },
+    "Account":
+    {
+        "jinnan.zhou@yhlsoft.com": "Qa-321qaz",
+        "yanan.qu@yhlsoft.com": "Test01$$~",
+        "mmp.3rdemail@test.yhl.com": "yHLsoft1$",
+        "mmp.3rdlink@test.yhl.com(3rd)": "yHLsoft1$",
+        "yanan.qu@yhlsoft.com(jp)": "yHLsoft5",
+        "daiju.liu@advyzon.com": "Christina@123",
+        "aim.document@testmail.com": "yHLsoft1",
+        "kimi@email.com": "Test1234",
+        "chris.peng@advyzonim.com(aim)": "yHLtest100",
+        "apple.lee@advyzon.com": "yHLtest1apple",
+        "test.common@yhlsoft.test.com": "yHLsoft1",
+        "tamp_test@163.com(aim_dev)": "yHLsoft1",
+        "qiang.chen@yhlsoft.com": "R1r1r1r1"
+    }
+}

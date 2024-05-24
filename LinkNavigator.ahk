@@ -3,7 +3,7 @@
 #Include <StackWidget>
 #Include <_JXON>
 #Include <Log>
-; Persistent
+Persistent
 
 class LinkNavigator {
 
@@ -46,11 +46,11 @@ class LinkNavigator {
 
 		; 搜索下拉框
 		this.searchGui.SetFont("s17 Norm", "Myanmar Text")
-		this.searchGuiCtrl := this.searchGui.Add("ComboBox", "R3 x10 y16 w400", this.keys)
+		this.searchGuiCtrl := this.searchGui.Add("ComboBox", "vCB R3 x10 y16 w400", this.keys)
 		this.searchGuiCtrl.OnEvent("Change", ObjBindMethod(this, "CtrlChange"))
 		; 录入按钮
 		this.searchGui.SetFont("s30", "Ms Shell Dlg 2")
-		this.inputGuiCtrl := this.searchGui.Add("Text", "x420 y16 w40 h48 -Border c93ADE2", "+")
+		this.inputGuiCtrl := this.searchGui.Add("Text", "vT1 x420 y16 w40 h48 -Border c93ADE2", "+")
 		this.inputGuiCtrl.OnEvent("Click", ObjBindMethod(this, "ClickAddUrl"))
 		this.searchGuiCtrlHwnd := this.searchGuiCtrl.Hwnd
 
