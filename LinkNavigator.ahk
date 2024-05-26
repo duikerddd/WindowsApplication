@@ -46,7 +46,7 @@ class LinkNavigator {
 
 		; 搜索下拉框
 		this.searchGui.SetFont("s17 Norm", "Myanmar Text")
-		this.searchGuiCtrl := this.searchGui.Add("ComboBox", "vCB R3 x10 y16 w400", this.keys)
+		this.searchGuiCtrl := this.searchGui.Add("ComboBox", "vCB x10 y16 w400", this.keys)
 		this.searchGuiCtrl.OnEvent("Change", ObjBindMethod(this, "CtrlChange"))
 		; 录入按钮
 		this.searchGui.SetFont("s30", "Ms Shell Dlg 2")
@@ -138,13 +138,29 @@ class LinkNavigator {
 			}
 		}
 
+		; 重绘标志: 框架部分情况自动重绘有问题
+		redraw_flag := 0
 		; 判断是否需要切换选项
 		change_flag := 0
+		
+		; 判断是否需要切换选项 - 长度不一样
 		current_keys := ControlGetItems(this.searchGuiCtrlHwnd)
 		if current_keys.Length != tamp_keys.Length {
 			change_flag := 1
+			if current_keys.Length > tamp_keys.Length {
+				redraw_flag := 1
+			}
 		}
-		
+
+		; 判断是否需要切换选项 - 无匹配
+		if change_flag == 0 {
+			if tamp_keys.Length == 0 {
+				redraw_flag := 1
+				change_flag := 1
+			}
+		}
+
+		; 判断是否需要切换选项 - 内容不一样
 		if change_flag == 0 {
 			Loop tamp_keys.Length {
 				if current_keys[A_Index] != tamp_keys[A_Index] {
@@ -156,17 +172,20 @@ class LinkNavigator {
 
 		; 重置选项
 		if change_flag == 1 {
-			this.ComboSetChooice(tamp_keys, txt)
+			this.ComboSetChooice(tamp_keys, txt, redraw_flag)
 		}
 
 	}
 
-	ComboSetChooice(items, txt) {
+	ComboSetChooice(items, txt, redraw_flag := 0) {
 		searchGuiCtrl := GuiCtrlFromHwnd(this.searchGuiCtrlHwnd)
 		searchGuiCtrl.Delete
 		searchGuiCtrl.Add items
-		ControlHideDropDown searchGuiCtrl
-		ControlShowDropDown searchGuiCtrl
+		; 目前想不到别的触发重绘的方法. Opt和Redraw都没用, 看源码只有几个ctrl方法会自动调用, 比如SetFont
+		if redraw_flag == 1 { 
+			searchGuiCtrl.SetFont("s17")
+			ControlShowDropDown searchGuiCtrl
+		} 
 		searchGuiCtrl.Text := txt
 		SendInput "{End}"
 	}
@@ -180,6 +199,7 @@ linkNavigatorObj := LinkNavigator()
 ^j::
 {
 	StackWidght.ShowGui(linkNavigatorObj.searchGui)
+	ControlShowDropDown GuiCtrlFromHwnd(linkNavigatorObj.searchGuiCtrlHwnd)
 	; 透明
 	;WinSetTransparent 200, "searchGui"
 	return
