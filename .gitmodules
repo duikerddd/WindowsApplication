@@ -1,6 +1,3 @@
 [submodule "AutoHotkey"]
 	path = AutoHotkey
 	url = https://github.com/duikerddd/AutoHotkey.git
-[submodule "Lib/Rufaydium-Webdriver"]
-	path = Lib/Rufaydium-Webdriver
-	url = https://github.com/duikerddd/Rufaydium-Webdriver.git
