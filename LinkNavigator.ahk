@@ -63,10 +63,15 @@ class LinkNavigator {
 		this.searchGuiCtrl := this._search_gui.Add("ComboBox", "vCB R5 x10 y16 w400")
 		this.searchGuiCtrl.OnEvent("Change", ObjBindMethod(this, "CtrlChange"))
 		; 录入按钮
-		this._search_gui.SetFont("s30", "Ms Shell Dlg 2")
-		this.inputGuiCtrl := this._search_gui.Add("Text", "vT1 x420 y16 w40 h48 -Border c93ADE2", "+")
+		this._search_gui.SetFont("s20", "Ms Shell Dlg 2")
+		this.inputGuiCtrl := this._search_gui.Add("Button", "vT1 x420 y16 w40 h48 -Border c93ADE2", "+")
 		this.inputGuiCtrl.OnEvent("Click", ObjBindMethod(this, "ClickAddUrl"))
 		this._search_gui_ctrl_hwnd := this.searchGuiCtrl.Hwnd
+
+		; 删除按钮
+		this._search_gui.SetFont("s20", "Ms Shell Dlg 2")
+		this.inputGuiCtrl := this._search_gui.Add("Button", "vT2 x470 y16 w40 h48 ", "-")
+		this.inputGuiCtrl.OnEvent("Click", ObjBindMethod(this, "ClickDeleteUrl"))
 
 		; 录入框
 		this._url_input_gui.SetFont("s16", "Segoe UI")
@@ -110,27 +115,39 @@ class LinkNavigator {
 		}
 	}
 
-	; 延迟400秒触发
+	; 延迟800秒触发
 	CtrlChange(GuiCtrlObj, Info) {
-		if WinActive("_search_gui") {
-			SetTimer this._time_func_obj, -500
+		if WinActive("search_gui") {
+			SetTimer this._time_func_obj, -800
 		}
 	}
 
 	SearchInput() {
 		txt := ControlGetText(this._search_gui_ctrl_hwnd)
 		GuiCtrlObj := GuiCtrlFromHwnd(this._search_gui_ctrl_hwnd)
-
-		if txt != ""
-			this.InputChange(GuiCtrlObj, txt)
-		else {
-			if ControlGetItems(this._search_gui_ctrl_hwnd).Length < this._keys.Length
-				this.ComboSetChooice(this._keys, txt)
+		ControlShowDropDown GuiCtrlFromHwnd(this._search_gui_ctrl_hwnd)
+		if txt != ""{
+			try
+				ControlChooseString txt, GuiCtrlObj
+		    catch {
+				GuiCtrlObj.Text := txt
+				SendInput "{End}"
+			}
 		}
 	}
 
 	ClickAddUrl(GuiCtrlObj, Info) {
 		StackWidght.ShowGui(this._url_input_gui)
+	}
+
+	ClickDeleteUrl(GuiCtrlObj, Info) {
+		try{
+			txt := ControlGetText(this._search_gui_ctrl_hwnd)
+			idx := ControlFindItem(txt, this._search_gui_ctrl_hwnd)
+			ControlDeleteItem idx, this._search_gui_ctrl_hwnd
+		}catch{
+			return
+		}
 	}
 
 	SaveUrl(GuiCtrlObj, Info) {
@@ -147,71 +164,7 @@ class LinkNavigator {
 	}
 
 	InputChange(GuiCtrlObj, txt) {
-
-		; 匹配符合的选项
-		tamp_keys := []
-		Loop this._keys.Length {
-			button_txt := this._keys[A_Index]
-			if InStr(button_txt, txt) > 0 {
-				tamp_keys.Push button_txt
-			}
-		}
-
-		; 重绘标志: 框架部分情况自动重绘有问题
-		redraw_flag := 0
-		; 判断是否需要切换选项
-		change_flag := 0
-
-		; 判断是否需要切换选项 - 长度不一样
-		current_keys := ControlGetItems(this._search_gui_ctrl_hwnd)
-		if current_keys.Length != tamp_keys.Length {
-			change_flag := 1
-			if current_keys.Length > tamp_keys.Length {
-				redraw_flag := 1
-			}
-		}
-
-		; 判断是否需要切换选项 - 无匹配
-		if change_flag == 0 {
-			if tamp_keys.Length == 0 {
-				redraw_flag := 1
-				change_flag := 1
-			}
-		}
-
-		; 判断是否需要切换选项 - 内容不一样
-		if change_flag == 0 {
-			Loop tamp_keys.Length {
-				if current_keys[A_Index] != tamp_keys[A_Index] {
-					change_flag := 1
-					break
-				}
-			}
-		}
-
-		; 重置选项
-		if change_flag == 1 {
-			this.ComboSetChooice(tamp_keys, txt, redraw_flag)
-		}
-
-	}
-
-	ComboSetChooice(items, txt := '', redraw_flag := 0) {
-		searchGuiCtrl := GuiCtrlFromHwnd(this._search_gui_ctrl_hwnd)
-		searchGuiCtrl.Delete
-		if items.Length > 0
-			searchGuiCtrl.Add items
-		; 目前想不到别的触发重绘的方法. Opt和Redraw都没用, 看源码只有几个ctrl方法会自动调用, 比如SetFont
-		; if redraw_flag == 1 {
-		; 	; ControlHideDropDown searchGuiCtrl
-		; }
-
-		; 因为元素多, 限制Rows, 用这个选项必须重绘
-		ControlHideDropDown searchGuiCtrl
-		ControlShowDropDown searchGuiCtrl
-		if txt != ''
-			searchGuiCtrl.Text := txt
-		SendInput "{End}"
+		ControlChooseString txt, GuiCtrlObj
 	}
 
 	SyncEdgeBookMark() {
