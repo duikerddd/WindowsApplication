@@ -86,6 +86,7 @@ class LinkNavigator {
 
 	; 触发
 	ChangeBefore(wParam, lParam, msg, hwnd) {
+		OutputDebug "ChangeBefore`n"
 		; 监控esc
 		if wParam == 27 {
 			SetTimer this._time_func_obj, 0
@@ -94,6 +95,7 @@ class LinkNavigator {
 	}
 
 	ChangeAfter(wParam, lParam, msg, hwnd) {
+		OutputDebug "ChangeAfter`n"
 		searchGuiCtrl := GuiCtrlFromHwnd(this._search_gui_ctrl_hwnd)
 		; 上下键 or esc 不触发搜索，需要中断valChange定时器
 		if wParam == 38 || wParam == 40
@@ -104,7 +106,7 @@ class LinkNavigator {
 			try {
 				idx := ControlGetIndex(this._search_gui_ctrl_hwnd)
 				; 没有在选项上，则匹配第一个
-				if idx == 0 
+				if idx == 0
 					idx := 1
 				choice_array := ControlGetItems(this._search_gui_ctrl_hwnd)
 				Run this._url_map[choice_array[idx]]
@@ -123,16 +125,26 @@ class LinkNavigator {
 	}
 
 	SearchInput() {
+		OutputDebug "SearchInput`n"
 		txt := ControlGetText(this._search_gui_ctrl_hwnd)
 		GuiCtrlObj := GuiCtrlFromHwnd(this._search_gui_ctrl_hwnd)
-		ControlShowDropDown GuiCtrlFromHwnd(this._search_gui_ctrl_hwnd)
+		if WinActive("search_gui")
+			ControlShowDropDown GuiCtrlFromHwnd(this._search_gui_ctrl_hwnd)
 		if txt != ""{
-			try
-				ControlChooseString txt, GuiCtrlObj
-		    catch {
-				GuiCtrlObj.Text := txt
-				SendInput "{End}"
-			}
+			Loop this._keys.Length {
+				key := this._keys[A_Index]
+				OutputDebug key "`n"
+
+				if InStr(key, txt) {
+					if ControlGetIndex(GuiCtrlObj) == A_Index{
+						return
+					}
+					
+					OutputDebug "匹配成功:" txt 
+					ControlChooseIndex A_Index, GuiCtrlObj
+					break
+				}
+			}	
 		}
 	}
 
@@ -141,11 +153,11 @@ class LinkNavigator {
 	}
 
 	ClickDeleteUrl(GuiCtrlObj, Info) {
-		try{
+		try {
 			txt := ControlGetText(this._search_gui_ctrl_hwnd)
 			idx := ControlFindItem(txt, this._search_gui_ctrl_hwnd)
 			ControlDeleteItem idx, this._search_gui_ctrl_hwnd
-		}catch{
+		} catch {
 			return
 		}
 	}
