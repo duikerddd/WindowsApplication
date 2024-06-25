@@ -11,13 +11,20 @@ class IniFileUtils {
         return list
     }
 
-    ReadSection(section){
+    ReadSection(section, only_keys := false){
         hashStr := IniRead(this._iniFilePath, section, , "")
         hashArr := StrSplit(hashStr, "`n")
         hash := Map()
         Loop hashArr.Length {
             key_val_arr := StrSplit(hashArr[A_Index], "=")
             hash[key_val_arr[1]] := key_val_arr[2]
+        }
+        if only_keys {
+            arr := Array()
+            for k,v in hash {
+                arr.Push k
+            } 
+            return arr
         }
         return hash
     }
