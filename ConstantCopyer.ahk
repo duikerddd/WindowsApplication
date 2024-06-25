@@ -105,7 +105,7 @@ class ConstantCopyer {
 
 		IB := InputBox("", "Input val", "h70", def_val)
 		OutputDebug "text:" text " val:" IB.Value
-		
+
 		if IB.Value == "" && IB.Result == "OK" {
 			MsgBox "Please input val"
 		}
@@ -146,6 +146,9 @@ class ConstantCopyer {
 	; 触发
 	ChangeBefore(wParam, lParam, msg, hwnd) {
 		OutputDebug "ChangeBefore`n"
+		; 上下键不触发
+		if wParam == 38 || wParam == 40
+			SetTimer this._time_func_obj, 0
 		; 监控esc
 		if wParam == 27 {
 			ControlHideDropDown this._combo_gui_ctrl
